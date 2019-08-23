@@ -1,0 +1,14 @@
+for i in 1 2 3
+do
+mkdir tetp_MMPBSA_joel$i
+cp ../../TETPnoP/conf_joel/tetpnop_MMPBSA_joel$i/*in tetp_MMPBSA_joel$i
+cp ../../TETPnoP/conf_joel/tetpnop_MMPBSA_joel$i/*run tetp_MMPBSA_joel$i
+cd tetp_MMPBSA_joel$i
+sed -i '' "s/tetpnop/tetp/g" *run
+cd ..
+cp tetp_joel_vac.prmtop HedKR_vac.prmtop HedKR_1_tetp_joel_vac_noion.prmtop tetp_MMPBSA_joel$i
+cd HedKR_1_tetp_md_joel$i
+cpptraj -p *prmtop -i cpptraj*
+cp *nowat.nc ../tetp_MMPBSA_joel$i
+cd ..
+done

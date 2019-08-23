@@ -1,0 +1,16 @@
+for i in 1 2 3
+do
+mkdir HedKR_1_tetp_md_joel$i
+cp /Users/shijizhao/Documents/Lab_Luo/HedKR-polyketide/TETPnoP/conf_joel/HedKR_1_tetpnop_md_joel$i/*in HedKR_1_tetp_md_joel$i
+cp /Users/shijizhao/Documents/Lab_Luo/HedKR-polyketide/TETPnoP/conf_joel/HedKR_1_tetpnop_md_joel$i/*run HedKR_1_tetp_md_joel$i
+cd HedKR_1_tetp_md_joel$i
+for j in 1 2 3
+do
+mv HedKR_1_tetpnop_md$j.in HedKR_1_tetp_md$j.in
+done
+mv *run HedKR_1_tetp_joel$i.run
+sed -i '' "s/tetpnop/tetp/g" *
+cp ../*wat.prmtop .
+cp ../min/min2.rst .
+cd ..
+done

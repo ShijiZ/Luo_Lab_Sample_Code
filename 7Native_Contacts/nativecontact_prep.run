@@ -1,0 +1,7 @@
+for i in 1 2 3
+do
+cd *_MMPBSA_joel$i
+cp /Users/shijizhao/Documents/Lab_Luo/HedKR-polyketide/TETP/conf_joel/tetp_MMPBSA_joel1/native_contacts.in .
+cpptraj -i native_contacts.in
+cd ..
+done

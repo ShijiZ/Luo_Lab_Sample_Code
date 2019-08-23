@@ -1,0 +1,7 @@
+Input file for running PB and GB in serial
+&general
+   keep_files=0, ligand_mask=:1, receptor_mask=:2-1025, startframe=50, endframe=200, interval=1,
+/
+&pb
+  istrng=0.100, inp=1, indi=4,
+/

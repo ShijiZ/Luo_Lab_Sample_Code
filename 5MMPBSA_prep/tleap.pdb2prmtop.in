@@ -1,0 +1,26 @@
+source leaprc.protein.ff14SB
+source leaprc.gaff2
+source leaprc.water.tip3p
+
+#loadamberprep NADPH_A.prep
+loadamberparams tetp.frcmod
+loadamberparams NADPH_A.frcmod
+loadamberparams NADPH_B.frcmod
+loadamberparams NADPH_C.frcmod
+loadamberparams NADPH_D.frcmod
+tetp1 = loadmol2 tetp_joel.mol2
+HedKR = loadpdb HedKR_noNDP_joel.pdb
+
+NA = loadmol2 NADPH_A.mol2
+NB = loadmol2 NADPH_B.mol2
+NC = loadmol2 NADPH_C.mol2
+ND = loadmol2 NADPH_D.mol2
+
+Receptor = combine {NA NB NC ND HedKR}
+COM1 = combine {tetp1 NA NB NC ND HedKR}
+
+saveamberparm tetp1 tetp_joel_vac.prmtop tetp_joel_vac.inpcrd
+saveamberparm Receptor HedKR_vac.prmtop HedKR_vac.inpcrd
+saveamberparm COM1 HedKR_1_tetp_joel_vac_noion.prmtop HedKR_1_tetp_joel_vac_noion.inpcrd
+
+quit

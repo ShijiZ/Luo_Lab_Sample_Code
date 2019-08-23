@@ -1,0 +1,4 @@
+trajin ../HedKR_1_tetp_joel1_md2.nc 1 last 5
+trajin ../HedKR_1_tetp_joel1_md3.nc 1 last 5
+reference ../../*wat.inpcrd
+rms reference out md_HedKR_joel1.rms @CA,C,N

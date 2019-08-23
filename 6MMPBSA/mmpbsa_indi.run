@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# To tell the system I'm using a shell script
+# #$ -S /bin/sh
+
+# The cuda jobs should be sent to the all.q queue
+#$ -l hostname=cpu-2-0|cpu-2-1|cpu-2-2|cpu-2-3|cpu-2-4|cpu-2-5|cpu-2-6|cpu-2-7
+
+# Will send email when job ends or aborts
+#$ -m ea
+#$ -M shijiz@uci.edu
+
+# Export these environmental variables
+#$ -v AMBERHOME=/home/shijiz/amber18-with-patches/
+#$ -v LD_LIBRARY_PATH=$LD_LIBRARY_PATH\:$AMBERHOME/lib
+source /home/shijiz/amber18-with-patches/amber.sh
+
+# The job is located in the current working directory.
+#$ -cwd
+
+# Set name of the job. This you will see when you use qstat (Change here)
+#$ -N tetp-joel1-mmpbsa-test
+
+# Set location of your original working directory
+cwrk=$(pwd)
+
+# Set job name (NOTE: if running multipe jobs at once on the same GPU, this 
+# name MUST be unique for each job) (Change here)
+job=tetp-joel1-mmpbsa-test
+
+# Set temporary local working folder
+wrk=/state/partition1/$job
+
+# This will check to see if the job name folder already exits, and
+# it will remove the folder and make a new one if it does
+if [ -d $wrk ]; then
+   rm -rf $wrk
+fi
+mkdir $wrk
+
+# Copy files over to temporary local working folder
+cp -a * $wrk
+cd $wrk
+
+# The MD engine
+mmpbsa=$AMBERHOME/bin/MMPBSA.py.MPI
+
+echo "AMBERHOME = $AMBERHOME"
+echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
+echo "HOSTNAME = $HOSTNAME"
+
+# Set the Molecular Name (Change here)			
+
+#echo "${pdb_name}job"
+
+### MMPBSA############################# (Change here)
+echo "mmpbsa begin!"
+mpirun -np 32 ${mmpbsa} \
+	-O \
+	-i mmpbsa_indi.in \
+	-o HedKR_1_tetp_joel1_MMPBSA_indi.dat \
+	-cp HedKR_1_tetp_joel_vac_noion.prmtop \
+	-sp HedKR_1_tetp_joel_vac_noion.prmtop \
+	-rp HedKR_vac.prmtop \
+	-lp tetp_joel_vac.prmtop \
+	-y HedKR_1_tetp_joel1_all_md_nowat.nc \
+        -eo HedKR_1_tetp_joel1_energy_indi.csv \
+	> progress.log 2>&1\
+
+/bin/rm -f reference.frc
+echo "mmpbsa done!"
+
+# Copy files back to your original working directory	
+cp -a * $cwrk
+
+# Remove jobname folder from /state/partition1/ when finished
+if [ -d $wrk ]; then
+   rm -rf $wrk
+fi

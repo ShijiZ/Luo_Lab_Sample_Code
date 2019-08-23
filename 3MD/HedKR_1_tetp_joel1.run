@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# To tell the system I'm using a shell script
+# #$ -S /bin/sh
+
+# The cuda jobs should be sent to the all.q queue
+##$ -l hostname=gpu-0-1|gpu-0-2|gpu-0-3|gpu-0-4|gpu-0-5|gpu-0-6|gpu-0-7|gpu-0-8|gpu-0-9|gpu-1-0|gpu-1-1|gpu-1-2|gpu-1-3|gpu-1-4|gpu-1-5|gpu-1-6|gpu-1-7|gpu-1-8|gpu-1-9
+
+# Will send email when job ends or aborts
+#$ -m ea
+#$ -M shijiz@uci.edu
+
+# Export these environmental variables
+#$ -v CUDA_HOME=/usr/local/cuda-10.0/,AMBERHOME=/home/shijiz/amber18-with-patches-cuda/
+#$ -v LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64:/home/shijiz/amber18-with-patches-cuda/lib:/opt/gridengine/lib/linux-x64:/opt/openmpi/lib:/opt/python/lib/
+#$ -v PATH=/usr/local/cuda-10.0/bin:/home/shijiz/amber18-with-patches-cuda/bin:/bin/opt/openmpi/bin:/usr/lib64/qt-3.3/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/bio/ncbi/bin:/opt/bio/mpiblast/bin:/opt/bio/EMBOSS/bin:/opt/bio/clustalw/bin:/opt/bio/tcoffee/bin:/opt/bio/hmmer/bin:/opt/bio/phylip/exe:/opt/bio/mrbayes:/opt/bio/fasta:/opt/bio/glimmer/bin:/opt/bio/glimmer/scripts:/opt/bio/gromacs/bin:/opt/bio/gmap/bin:/opt/bio/tigr/bin:/opt/bio/autodocksuite/bin:/opt/bio/wgs/bin:/opt/eclipse:/opt/ganglia/bin:/opt/ganglia/sbin:/usr/java/latest/bin:/opt/rocks/bin:/opt/rocks/sbin:/opt/condor/bin:/opt/condor/sbin:/opt/gridengine/bin/linux-x64
+
+# The job is located in the current working directory.
+#$ -cwd
+
+# Set name of the job. This you will see when you use qstat (Change here)
+#$ -N HedKR_1_tetp_joel1
+
+# Set location of your original working directory
+cwrk=$(pwd)
+
+# Set job name (NOTE: if running multipe jobs at once on the same GPU, this 
+# name MUST be unique for each job) (Change here)
+job=HedKR_1_tetp_joel1
+
+# Set temporary local working folder
+wrk=/state/partition1/$job
+
+# This will check to see if the job name folder already exits, and
+# it will remove the folder and make a new one if it does
+if [ -d $wrk ]; then
+   rm -rf $wrk
+fi
+mkdir $wrk
+
+# Copy files over to temporary local working folder
+cp -a * $wrk
+cd $wrk
+
+# The MD engine
+sander=$AMBERHOME/bin/pmemd.cuda_SPFP
+
+echo "AMBERHOME = $AMBERHOME"
+echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
+echo "HOSTNAME = $HOSTNAME"
+
+# Set the Molecular Name (Change here)
+pdb_name=HedKR_1_tetp			
+
+echo "${pdb_name}job"
+
+### Sander############################# (Change here)
+echo "md1 step begin!"
+${sander} \
+	-O \
+	-i ${pdb_name}_md1.in \
+	-p ${pdb_name}_joel1_wat.prmtop \
+	-c min2.rst \
+	-ref min2.rst \
+	-o ${pdb_name}_joel1_md1.out \
+	-r ${pdb_name}_joel1_md1.rst \
+	-x ${pdb_name}_joel1_md1.nc \
+	> progress.log 2>&1\
+
+/bin/rm -f mdin logfile mdinfo
+echo "md1 step done!"
+
+### Sander############################# (Change here)
+echo "md2 step begin!"
+${sander} \
+	-O \
+	-i ${pdb_name}_md2.in \
+	-p ${pdb_name}_joel1_wat.prmtop \
+	-c ${pdb_name}_joel1_md1.rst \
+	-o ${pdb_name}_joel1_md2.out \
+	-r ${pdb_name}_joel1_md2.rst \
+	-x ${pdb_name}_joel1_md2.nc \
+
+/bin/rm -f mdin logfile mdinfo
+echo "md2 step done!"
+
+### Sander############################# (Change here)
+echo "md3 step begin!"
+${sander} \
+	-O \
+	-i ${pdb_name}_md3.in \
+	-p ${pdb_name}_joel1_wat.prmtop \
+	-c ${pdb_name}_joel1_md2.rst \
+	-o ${pdb_name}_joel1_md3.out \
+	-r ${pdb_name}_joel1_md3.rst \
+	-x ${pdb_name}_joel1_md3.nc \
+
+/bin/rm -f mdin logfile mdinfo
+echo "md2 step done!"
+
+echo "this job done!"
+
+# Copy files back to your original working directory	
+cp -a * $cwrk
+
+# Remove jobname folder from /state/partition1/ when finished
+if [ -d $wrk ]; then
+   rm -rf $wrk
+fi

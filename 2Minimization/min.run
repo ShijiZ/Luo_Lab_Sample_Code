@@ -1,0 +1,5 @@
+sander -O -i min1.in -p ../*wat.prmtop -c ../*wat.inpcrd -o min1.out -r min1.rst -ref ../*wat.inpcrd
+
+sander -O -i min2.in -p ../*wat.prmtop -c min1.rst -o min2.out -r min2.rst
+
+ambpdb -p ../*wat.prmtop -c min2.rst > min2.pdb

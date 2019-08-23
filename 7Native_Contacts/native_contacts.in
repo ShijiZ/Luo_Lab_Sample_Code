@@ -1,0 +1,5 @@
+parm *noion.prmtop
+trajin *nc
+nativecontacts :2-1025&!@H= :1&!@H= writecontacts contacts_pair.dat resout res_pair.dat \
+    distance 7.0 out contact_frame.dat mindist maxdist name contact\
+               

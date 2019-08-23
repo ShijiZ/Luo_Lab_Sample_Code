@@ -1,0 +1,5 @@
+trajin HedKR_1_tetp_joel1_md2.nc 1 last 5
+trajin HedKR_1_tetp_joel1_md3.nc 1 last 5
+strip :WAT
+strip :Na+
+trajout HedKR_1_tetp_joel1_all_md_nowat.nc netcdf
