@@ -1,0 +1,27 @@
+# VMD for MACOSXX86, version 1.9.3 (November 30, 2016)
+# Log file '/Users/shijizhao/Documents/Lab_Luo/HedKR-polyketide/TETP/conf1/HedKR_1_tetp_md_conf1/pca/vmd.vmd', created by user shijizhao
+set id 11
+set label OCP
+mol modstyle 0 $id NewCartoon 0.300000 10.000000 4.100000 0
+mol color Name
+mol representation NewCartoon 0.300000 10.000000 4.100000 0
+mol selection all not water
+mol material Opaque
+mol addrep $id
+mol color Name
+mol representation NewCartoon 0.300000 10.000000 4.100000 0
+mol selection resname $label
+mol material Opaque
+mol modrep 1 $id
+mol modstyle 1 $id Licorice 0.300000 12.000000 12.000000
+mol color Name
+mol representation Licorice 0.300000 12.000000 12.000000
+mol selection resname $label
+mol material Opaque
+mol addrep $id
+mol modselect 2 $id resname ARG
+mol modstyle 2 $id Lines 1.000000
+mol smoothrep $id 2 5
+mol smoothrep $id 1 5
+mol smoothrep $id 0 5
+
