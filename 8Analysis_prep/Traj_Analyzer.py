@@ -119,7 +119,7 @@ def energySample(basepath, subpath, csv_name, sim_list, col, text, n_size):
     for i in sim_list:
         sim = pd.read_csv(basepath+subpath%(i,i), skiprows=464)
         cavg = sim[col].expanding().mean().to_frame()
-        print('The cumulative average'+text+'of sim %s'%(i),cavg.iloc[150])
+        print('The cumulative average '+text+' of sim %s'%(i),cavg.iloc[150])
         
         sim_equil = sim[col].iloc[51:151]                                   # Dataframe for equilibrated data points
         sim_sample = sim_equil.sample(n=n_size, replace = False).to_frame() # Random sample from equilibrated data points

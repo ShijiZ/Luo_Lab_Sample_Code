@@ -1,0 +1,7 @@
+# Usage: Open thie script through File/Open/ select format Chimera commands
+
+movie record supersample 3
+turn y 1 360 
+wait
+movie stop
+movie encode output ~/Desktop/movie.mov bitrate 10000
