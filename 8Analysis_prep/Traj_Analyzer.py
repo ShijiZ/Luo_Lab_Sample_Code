@@ -7,7 +7,7 @@ sns.set(font_scale=2)
 sns.set_style("ticks")
 
 
-def score(basepath, subpath, csv_name):
+def score(basepath, subpath, csv_name, by_frame = True):
     '''
     Calculate the stability score of each simulation trajectory and save each score into a .csv file
 
@@ -17,24 +17,57 @@ def score(basepath, subpath, csv_name):
         The basepath of source file
     
     subpath : str
-        The subpath of source file (contacts_pair.dat)
+        The subpath of source file (contact_frame.dat)
     
     csv_name : str
-        The path to the output file (.csv)
+        The path to the output file, the total score (.csv)
+    
+    by_frame : boolean
+        If False, save average score; If True, save score of each frame
     
     '''
+
     score_list = []                                # The list of the stability score of each trajectory
+    score_by_frame = pd.DataFrame({'contact[native]':[]})               # The list of the stability score by frame of each trajectory
     for i in range(1,4):
-        score_df = pd.read_csv(basepath+subpath%(i), delim_whitespace=True, skiprows=2)
-        score = score_df['Frac.'].mean()           # Calculate the score
-        score_list.append(score)
-        print('Simulation %s score: '%(i),score)
+        score_df = pd.read_csv(basepath+subpath%(i), delim_whitespace=True, skiprows=0)
+        score = score_df['contact[native]'].div(score_df['contact[native]'][0]).iloc[100:201]          # Calculate the score
+        
+        score_list.append(score.mean())
+        print('Simulation %s score: '%(i),score.mean())
+
+        score_by_frame = score_by_frame.append(pd.DataFrame({'Score':score.values}), ignore_index = True)
 
     print()
     print("Total average score is ",np.mean(score_list))
     
-    score_df = pd.DataFrame({'Score':score_list})  # Dataframe for native contact score for all 3 trajectories
-    score_df.to_csv(csv_name, index=False)         # Save each score to csv_name
+    if by_frame:
+        score_by_frame.to_csv(csv_name, index=False)         # Save score by frame to csv_name
+    
+    else:
+        score_df = pd.DataFrame({'Score':score_list})  # Dataframe for native contact score for all 3 trajectories
+        score_df.to_csv(csv_name, index=False)         # Save each score to csv_name
+
+
+
+def scorePlot(basepath, subpath, title_name, fig_name):
+    ''''''
+    plt.figure(figsize=(30, 8))    
+    for i in range(1,4):
+        plt.subplot(1,3,i)                                                           # The ith subplot          
+        score_df = pd.read_csv(basepath+subpath%(i), delim_whitespace=True, skiprows=0)
+        score = score_df['contact[native]'].div(score_df['contact[native]'][0])
+        
+        # PLOT 
+        plt.plot(score.index, score.values)
+        
+        # TITLE ETC. 
+        plt.title(title_name+'%s'%i)
+        plt.ylabel('Stability Score by Frame')
+        plt.xlabel('time/ns')
+        
+    plt.savefig(fig_name,bbox_inches='tight',transparent=True)                       # Save figure to fig_name
+
 
 
 def rmsdPlot(basepath, rec_subpath, lig_subpath, title_name, fig_name, rec_name, lig_name):
@@ -86,7 +119,7 @@ def rmsdPlot(basepath, rec_subpath, lig_subpath, title_name, fig_name, rec_name,
     plt.savefig(fig_name,bbox_inches='tight',transparent=True)                       # Save figure to fig_name
 
 
-def energySample(basepath, subpath, csv_name, sim_list, col, text, n_size):
+def energySample(basepath, subpath, csv_name, sim_list, col_list, text, subtract=False, sampling=False, n_size=1):
     '''
     Sample the data points of MMPBSA, and save sampled points to a .csv file
     
@@ -104,31 +137,58 @@ def energySample(basepath, subpath, csv_name, sim_list, col, text, n_size):
     sim_list : int[]
         The list of trajectory indices t be analyzed (based on score)
 
-    col : str
-        The colume to be analyzed (either 'DELTA TOTAL' or 'VDWAALS')
+    col_list : str[]
+        The list of columes to be analyzed ('DELTA TOTAL', 'VDWAALS', 'EEL', 'ENPOLAR', 'EPB')
     
     text : str
-        The text to be printed ("energy (parameter set 1)", "energy (parameter set 2)", or "Van der Waals energy")
+        The text to be printed ("Total Energy", "Packing/Hydrophobic Effect", etc)
     
+    subtract : boolean
+        If False, just save target data indicated by col; If True, subtract col from Delta Total
+    
+    sampling : boolean
+        If False, do not do sampling; If True, sample from datasets with size indicated by n_size
+        
     n_size : int
         Sample size in each trajectory
     
     '''
-    sim_all = pd.DataFrame()                       # Dataframe for raw energy data
+    sim_all = pd.DataFrame()                  # Dataframe for raw energy data
     
     for i in sim_list:
         sim = pd.read_csv(basepath+subpath%(i,i), skiprows=464)
-        cavg = sim[col].expanding().mean().to_frame()
-        print('The cumulative average '+text+' of sim %s'%(i),cavg.iloc[150])
-        
-        sim_equil = sim[col].iloc[51:151]                                   # Dataframe for equilibrated data points
-        sim_sample = sim_equil.sample(n=n_size, replace = False).to_frame() # Random sample from equilibrated data points
+
+        cavg = pd.DataFrame()                 # Dataframe of cumulative average of all data points from col
+        sim_equil = pd.DataFrame()            # Dataframe for equilibrated data points from col
+        for col in col_list:
+            cavg_col = sim[col].expanding().mean().to_frame(name = text)
+            sim_equil_col = sim[col].iloc[51:151].to_frame(name = text)
+            cavg = cavg.add(cavg_col, fill_value = 0.0)
+            sim_equil = sim_equil.add(sim_equil_col, fill_value = 0.0)
+
+        if subtract == False:
+            print('The cumulative average '+text+' of sim %s'%(i),cavg.iloc[150])
+            if sampling == False:
+                sim_sample = sim_equil
+            else:
+                sim_sample = sim_equil.sample(n=n_size, replace = False) # Random sample from equilibrated data points (Order rearranged)        
+        else:
+            print('%s subtracted from Total Energy'%(text))
+            sim_subtract = sim['DELTA TOTAL'].iloc[51:151].to_frame(name = text).subtract(sim_equil) # Dataframe for subtracted data points
+            if sampling == False:
+                sim_sample = sim_subtract
+            else:
+                sim_sample = sim_subtract.sample(n=n_size, replace = False) # Random sample from subtracted data points (Order rearranged)
+
         sim_all=sim_all.append(sim_sample, ignore_index=True)
-    
-    sim_all.to_csv(csv_name,index=False)                                    # Save sampled data points to csv_name
+
+    if subtract == False:
+        sim_all.to_csv(csv_name, index=False)
+    else:
+        sim_all.to_csv(csv_name, index=False, header=['sub-%s'%(text)]) # Save sampled data points to csv_name
 
 
-def energyPlot(basepath, subpath, title_name, y_label, fig_name):
+def energyPlot(basepath, subpath, col_list, title_name, y_label, fig_name):
     '''
     Plot the energy change of each trajectory, including individual data points and cumulative 
     average data points, and save the plot as a .png file
@@ -140,6 +200,9 @@ def energyPlot(basepath, subpath, title_name, y_label, fig_name):
     
     subpath : str
         The subpath of source file (.csv file generated by MMPBSA run)
+    
+    col_list : str[]
+        The list of columes to be analyzed ('DELTA TOTAL', 'VDWAALS', 'EEL', 'ENPOLAR', 'EPB')
     
     title_name : str
         The title of the figure
@@ -155,8 +218,14 @@ def energyPlot(basepath, subpath, title_name, y_label, fig_name):
     color_list = ['dum','r','g','b']
     for i in range(1, 4):
         sim = pd.read_csv(basepath+subpath%(i,i),skiprows=464)
-        sim_total = sim['DELTA TOTAL']                            # Dataframe of individual data points
-        cavg = sim['DELTA TOTAL'].expanding().mean()              # Dataframe of cumulative average data points
+        
+        cavg = pd.DataFrame()              # Dataframe of cumulative average data points
+        sim_total = pd.DataFrame()         # Dataframe of individual data points
+        for col in col_list:
+            sim_col = sim[col].to_frame(name = 'a')                          
+            cavg_col = sim[col].expanding().mean().to_frame(name = 'a')
+            sim_total = sim_total.add(sim_col, fill_value = 0.0)
+            cavg = cavg.add(cavg_col, fill_value = 0.0)
         
         # PLOT 
         plt.plot(np.array(range(len(cavg)))+50,cavg,label='Sim %s'%i,color=color_list[i],linewidth=2)
